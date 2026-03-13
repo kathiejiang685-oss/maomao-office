@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#8B4513">
+    <title>毛毛的智能办公室 | Maomao Office</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦞</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #fff;
+        }
+        
+        /* 登录页面 */
+        .login-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+        
+        .login-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .login-box {
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+        }
+        
+        .login-box h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .login-box .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: 3px;
+        }
+        
+        .login-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .login-box button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .login-box button:active {
+            transform: scale(0.98);
+        }
+        
+        .login-error {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* 主界面 */
+        .main-app {
+            display: none;
+            padding: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .main-app.visible {
+            display: block;
+        }
+        
+        /* 头部 */
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(76, 175, 80, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #4CAF50;
+            margin-top: 10px;
+        }
+        
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* 办公室场景 */
+        .office-scene {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 30%, #5d4037 30%, #4e342e 100%);
+            border-radius: 20px;
+            height: 350px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+        }
+        
+        /* 窗户 */
+        .window {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            width: 100px;
+            height: 70px;
+            background: linear-gradient(180deg, #87CEEB 0%, #B3E5FC 100%);
+            border: 3px solid #3e2723;
+            border-radius: 4px;
+        }
+        
+        .window::before, .window::after {
+            content: '';
+            position: absolute;
+            background: #3e2723;
+        }
+        
+        .window::before { top: 50%; left: 0; right: 0; height: 3px; }
+        .window::after { left: 50%; top: 0; bottom: 0; width: 3px; }
+        
+        /* 云朵 */
+        .cloud {
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            border-radius: 20px;
+            animation: float 15s infinite linear;
+        }
+        
+        .cloud1 { width: 25px; height: 12px; top: 15px; left: -25px; }
+        
+        @keyframes float {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(130px); }
+        }
+        
+        /* 办公桌 */
+        .desk {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 100px;
+            background: #5d4037;
+            border: 2px solid #3e2723;
+            border-radius: 4px;
+        }
+        
+        .desk::before, .desk::after {
+            content: '';
+            position: absolute;
+            bottom: -35px;
+            width: 12px;
+            height: 35px;
+            background: #4e342e;
+        }
+        
+        .desk::before { left: 20px; }
+        .desk::after { right: 20px; }
+        
+        /* 电脑 */
+        .computer {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 45px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 4px;
+        }
+        
+        .computer-screen {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f3460 100%);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .screen-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8px;
+            color: #00ff00;
+            font-family: monospace;
+            white-space: nowrap;
+            animation: typing 3s infinite;
+        }
+        
+        @keyframes typing {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* 书架 */
+        .bookshelf {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 80px;
+            height: 120px;
+            background: #4e342e;
+            border: 2px solid #3e2723;
+        }
+        
+        .shelf {
+            position: absolute;
+            left: 0; right: 0;
+            height: 3px;
+            background: #3e2723;
+        }
+        
+        .shelf:nth-child(1) { top: 33%; }
+        .shelf:nth-child(2) { top: 66%; }
+        
+        .book {
+            position: absolute;
+            width: 6px;
+            border-radius: 1px;
+        }
+        
+        /* 毛毛 - 红色龙虾穿咖啡色西装 */
+        .maomao {
+            position: absolute;
+            width: 80px;
+            height: 100px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+        
+        /* 西装外套 - 咖啡色 */
+        .suit-body {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 45px;
+            background: linear-gradient(180deg, #6d4c41 0%, #5d4037 100%);
+            border-radius: 10px 10px 5px 5px;
+            border: 2px solid #4e342e;
+        }
+        
+        /* 西装领口 */
+        .suit-collar {
+            position: absolute;
+            bottom: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid #6d4c41;
+        }
+        
+        .suit-collar::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 15px solid #fff;
+        }
+        
+        /* 领带 - 亮黄色 */
+        .tie {
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 25px solid #FFD700;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+        }
+        
+        /* 龙虾头 - 红色 */
+        .lobster-head {
+            position: absolute;
+            bottom: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 35px;
+            background: linear-gradient(180deg, #e53935 0%, #c62828 100%);
+            border-radius: 50% 50% 45% 45%;
+            border: 2px solid #b71c1c;
+        }
+        
+        /* 眼睛 */
+        .eye {
+            position: absolute;
+            top: 10px;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            border: 1px solid #333;
+        }
+        
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 6px;
+            height: 6px;
+            background: #333;
+            border-radius: 50%;
+        }
+        
+        .eye.left { left: 5px; }
+        .eye.right { right: 5px; }
+        
+        /* 触须 */
+        .antenna {
+            position: absolute;
+            top: -15px;
+            width: 2px;
+            height: 20px;
+            background: #e53935;
+            border-radius: 2px;
+        }
+        
+        .antenna.left { 
+            left: 10px; 
+            transform: rotate(-20deg);
+            animation: antenna-wave 3s infinite;
+        }
+        
+        .antenna.right { 
+            right: 10px; 
+            transform: rotate(20deg);
+            animation: antenna-wave 3s infinite 0.5s;
+        }
+        
+        .antenna::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -2px;
+            width: 6px;
+            height: 6px;
+            background: #e53935;
+            border-radius: 50%;
+        }
+        
+        @keyframes antenna-wave {
+            0%, 100% { transform: rotate(-20deg); }
+            50% { transform: rotate(-30deg); }
+        }
+        
+        /* 钳子 - 根据状态变化 */
+        .claw {
+            position: absolute;
+            bottom: 35px;
+            width: 25px;
+            height: 30px;
+            background: linear-gradient(180deg, #e53935 0%, #c62828 100%);
+            border: 2px solid #b71c1c;
+            border-radius: 50% 50% 30% 30%;
+            transition: all 0.3s;
+        }
+        
+        .claw.left {
+            left: -5px;
+            transform-origin: bottom right;
+        }
+        
+        .claw.right {
+            right: -5px;
+            transform-origin: bottom left;
+        }
+        
+        /* 动作状态 */
+        .maomao.working .claw.left {
+            animation: typing-claw 0.5s infinite;
+        }
+        
+        .maomao.working .claw.right {
+            animation: typing-claw 0.5s infinite 0.25s;
+        }
+        
+        .maomao.thinking .claw.left {
+            transform: rotate(-40deg) translateY(-5px);
+        }
+        
+        .maomao.thinking .claw.right {
+            transform: rotate(40deg) translateY(-5px);
+        }
+        
+        .maomao.celebrating .claw.left {
+            animation: celebrate 0.5s infinite;
+        }
+        
+        .maomao.celebrating .claw.right {
+            animation: celebrate 0.5s infinite 0.25s;
+        }
+        
+        .maomao.scanning .claw.left,
+        .maomao.scanning .claw.right {
+            animation: scan-wave 1s infinite;
+        }
+        
+        @keyframes typing-claw {
+            0%, 100% { transform: rotate(-30deg); }
+            50% { transform: rotate(-50deg); }
+        }
+        
+        @keyframes celebrate {
+            0%, 100% { transform: rotate(-30deg) translateY(0); }
+            50% { transform: rotate(-60deg) translateY(-20px); }
+        }
+        
+        @keyframes scan-wave {
+            0%, 100% { transform: rotate(-30deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(-50deg); }
+        }
+        
+        /* 气泡对话框 */
+        .bubble {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 13px;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid white;
+        }
+        
+        .bubble.show {
+            opacity: 1;
+        }
+        
+        /* 扫描光束效果 */
+        .scan-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(0, 255, 0, 0.3) 50%, 
+                transparent 100%);
+            opacity: 0;
+            pointer-events: none;
+            animation: scan 2s ease-in-out;
+        }
+        
+        @keyframes scan {
+            0% { opacity: 0; transform: translateY(-100%); }
+            50% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(100%); }
+        }
+        
+        /* 状态卡片 */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .status-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .status-card .icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .status-card .value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .status-card .label {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 3px;
+        }
+        
+        /* 快捷菜单 */
+        .quick-menu {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .quick-menu h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .menu-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 5px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .menu-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+        }
+        
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .menu-btn .icon {
+            font-size: 24px;
+        }
+        
+        .menu-btn.primary {
+            background: linear-gradient(135deg, #FF6B6B 0%, #ee5a5a 100%);
+        }
+        
+        .menu-btn.primary:hover {
+            background: linear-gradient(135deg, #ff8585 0%, #f07070 100%);
+        }
+        
+        /* 扫描结果面板 */
+        .scan-result {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .scan-result.show {
+            display: block;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .scan-result h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stock-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stock-name {
+            font-weight: 600;
+        }
+        
+        .stock-score {
+            background: #4CAF50;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .stock-score.high {
+            background: #FF6B6B;
+        }
+        
+        /* 日志面板 */
+        .log-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: #aaa;
+            margin-right: 8px;
+        }
+        
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9998;
+        }
+        
+        .loading-overlay.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: #FF6B6B;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        /* 推送通知 */
+        .push-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            transition: transform 0.3s;
+        }
+        
+        .push-notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* 设置按钮 */
+        .settings-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>🦞 毛毛的智能办公室</h1>
+            <p class="subtitle">私人专属 · 安全访问</p>
+            <input type="password" id="accessCode" placeholder="请输入访问密码" maxlength="6">
+            <button onclick="login()">进入办公室</button>
+            <p class="login-error" id="loginError">密码错误，请重试</p>
+        </div>
+    </div>
+    
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p class="loading-text" id="loadingText">正在扫描妖股...</p>
+    </div>
+    
+    <!-- 推送通知 -->
+    <div class="push-notification" id="pushNotification">
+        📈 发现 3 只潜力妖股！
+    </div>
+    
+    <!-- 主应用 -->
+    <div class="main-app" id="mainApp">
+        <div class="header">
+            <h1>🦞 毛毛的办公室</h1>
+            <span class="status-badge">在线工作</span>
+        </div>
+        
+        <!-- 办公室场景 -->
+        <div class="office-scene" id="officeScene">
+            <button class="settings-btn" onclick="showSettings()">⚙️</button>
+            
+            <!-- 窗户 -->
+            <div class="window">
+                <div class="cloud cloud1"></div>
+            </div>
+            
+            <!-- 书架 -->
+            <div class="bookshelf">
+                <div class="shelf"></div>
+                <div class="shelf"></div>
+            </div>
+            
+            <!-- 办公桌 -->
+            <div class="desk">
+                <div class="computer">
+                    <div class="computer-screen">
+                        <div class="screen-content">&lt;/&gt;</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 毛毛 -->
+            <div class="maomao working" id="maomao" onclick="onMaomaoClick()">
+                <div class="bubble" id="maomaoBubble">老板好！我是毛毛 🦞</div>
+                
+                <!-- 西装 -->
+                <div class="suit-body"></div>
+                <div class="suit-collar"></div>
+                <div class="tie"></div>
+                
+                <!-- 龙虾头 -->
+                <div class="lobster-head">
+                    <div class="antenna left"></div>
+                    <div class="antenna right"></div>
+                    <div class="eye left"></div>
+                    <div class="eye right"></div>
+                </div>
+                
+                <!-- 钳子 -->
+                <div class="claw left"></div>
+                <div class="claw right"></div>
+            </div>
+        </div>
+        
+        <!-- 状态卡片 -->
+        <div class="status-cards">
+            <div class="status-card">
+                <div class="icon">⚡</div>
+                <div class="value" id="energyValue">85%</div>
+                <div class="label">精力值</div>
+            </div>
+            <div class="status-card">
+                <div class="icon">😊</div>
+                <div class="value" id="moodValue">开心</div>
+                <div class="label">心情</div>
+            </div>
+            <div class="status-card">
+                <div class="icon">📊</div>
+                <div class="value" id="taskValue">3/5</div>
+                <div class="label">今日任务</div>
+            </div>
+            <div class="status-card">
+                <div class="icon">⏰</div>
+                <div class="value" id="onlineValue">2h</div>
+                <div class="label">在线时长</div>
+            </div>
+        </div>
+        
+        <!-- 快捷菜单 -->
+        <div class="quick-menu">
+            <h3>⚡ 快捷操作</h3>
+            <div class="menu-grid">
+                <button class="menu-btn primary" onclick="scanStocks()">
+                    <span class="icon">📈</span>
+                    <span>妖股扫描</span>
+                </button>
+                <button class="menu-btn" onclick="quickAction('work')">
+                    <span class="icon">💼</span>
+                    <span>工作模式</span>
+                </button>
+                <button class="menu-btn" onclick="quickAction('rest')">
+                    <span class="icon">☕</span>
+                    <span>休息一下</span>
+                </button>
+                <button class="menu-btn" onclick="quickAction('chat')">
+                    <span class="icon">💬</span>
+                    <span>和毛毛聊</span>
+                </button>
+            </div>
+            
+            <!-- 扫描结果 -->
+            <div class="scan-result" id="scanResult">
+                <h4>🔥 扫描完成 - 发现潜力股</h4>
+                <div id="stockList"></div>
+                <button class="menu-btn primary" style="width: 100%; margin-top: 10px;" onclick="pushToPhone()">
+                    <span>📱 推送到手机</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 日志 -->
+        <div class="log-panel" id="logPanel">
+            <div class="log-entry"><span class="log-time">09:00</span>毛毛已就位，开始工作</div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 安全配置 ====================
+        const CONFIG = {
+            // 修改这里设置你的专属密码
+            ACCESS_CODE: 'maomao88', // 默认密码，建议修改
+            
+            // OpenClaw API 配置
+            OPENCLAW_URL: localStorage.getItem('openclaw_url') || '',
+            API_KEY: localStorage.getItem('api_key') || '',
+            
+            // 扫描配置
+            SCAN_INTERVAL: 30, // 分钟
+            
+            // 推送配置 (使用 Push API 或 企业微信/钉钉)
+            PUSH_ENABLED: true
+        };
+        
+        // ==================== 毛毛状态 ====================
+        const maomaoState = {
+            energy: 85,
+            mood: 90,
+            tasksCompleted: 3,
+            totalTasks: 5,
+            currentActivity: 'working', // working, resting, thinking, celebrating, scanning
+            onlineTime: 0,
+            lastScan: null,
+            stocks: []
+        };
+        
+        // ==================== 登录验证 ====================
+        function login() {
+            const input = document.getElementById('accessCode').value;
+            if (input === CONFIG.ACCESS_CODE) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.add('visible');
+                initApp();
+                addLog('登录成功，欢迎老板！');
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('loginError').style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // 回车登录
+        document.getElementById('accessCode')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
+        
+        // ==================== 初始化 ====================
+        function initApp() {
+            startOnlineTimer();
+            updateMaomaoState();
+            
+            // 定时自动移动
+            setInterval(() => {
+                moveMaomao();
+            }, 15000);
+            
+            // 定时随机气泡
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    showRandomBubble();
+                }
+            }, 20000);
+            
+            // 连接 OpenClaw（如果配置了）
+            if (CONFIG.OPENCLAW_URL) {
+                connectOpenClaw();
+            }
+        }
+        
+        // ==================== 毛毛动作系统 ====================
+        function setMaomaoState(state) {
+            const maomao = document.getElementById('maomao');
+            maomao.className = 'maomao ' + state;
+            maomaoState.currentActivity = state;
+            
+            const bubbles = {
+                working: ['正在努力工作！', '这个代码有点意思~', '马上就好！'],
+                resting: ['休息一下~', '充充电 ⚡', '喝杯咖啡 ☕'],
+                thinking: ['让我想想...', '思考中 🤔', '有了！'],
+                celebrating: ['太棒了！', '完成任务！🎉', '庆祝一下！'],
+                scanning: ['正在扫描市场...', '发现机会！', '分析数据中...']
+            };
+            
+            const msgs = bubbles[state] || ['你好！'];
+            showBubble(msgs[Math.floor(Math.random() * msgs.length)]);
+        }
+        
+        function moveMaomao() {
+            const maomao = document.getElementById('maomao');
+            const positions = [
+                { left: '20%', bottom: '40%' },   // 左边
+                { left: '50%', bottom: '45%' },   // 中央
+                { left: '80%', bottom: '35%' },   // 右边
+                { left: '35%', bottom: '30%' },   // 左下
+                { left: '65%', bottom: '50%' }    // 右上
+            ];
+            
+            const pos = positions[Math.floor(Math.random() * positions.length)];
+            maomao.style.left = pos.left;
+            maomao.style.bottom = pos.bottom;
+            
+            addLog('毛毛移动到了新位置');
+        }
+        
+        function onMaomaoClick() {
+            // 点击毛毛 = 扫描妖股
+            scanStocks();
+        }
+        
+        // ==================== 气泡对话 ====================
+        function showBubble(text, duration = 3000) {
+            const bubble = document.getElementById('maomaoBubble');
+            bubble.textContent = text;
+            bubble.classList.add('show');
+            
+            setTimeout(() => {
+                bubble.classList.remove('show');
+            }, duration);
+        }
+        
+        function showRandomBubble() {
+            const bubbles = [
+                '老板，有什么吩咐？',
+                '今天市场看起来不错！',
+                '我在盯着盘面呢 👀',
+                '需要我扫描一下吗？',
+                '毛毛随时待命！',
+                '发现异动我会第一时间通知您！'
+            ];
+            showBubble(bubbles[Math.floor(Math.random() * bubbles.length)]);
+        }
+        
+        // ==================== 妖股扫描 ====================
+        async function scanStocks() {
+            setMaomaoState('scanning');
+            document.getElementById('loadingOverlay').classList.add('show');
+            
+            // 模拟扫描过程
+            await new Promise(r => setTimeout(r, 2000));
+            
+            // 生成模拟扫描结果（实际应连接真实API）
+            const mockStocks = [
+                { symbol: 'AAPL', name: '苹果', score: 92, change: '+5.2%', reason: '突破新高' },
+                { symbol: 'NVDA', name: '英伟达', score: 88, change: '+3.8%', reason: '量能放大' },
+                { symbol: 'TSLA', name: '特斯拉', score: 85, change: '+4.5%', reason: '均线多头排列' }
+            ];
+            
+            maomaoState.stocks = mockStocks;
+            maomaoState.lastScan = new Date();
+            
+            document.getElementById('loadingOverlay').classList.remove('show');
+            setMaomaoState('celebrating');
+            
+            // 显示结果
+            renderScanResults(mockStocks);
+            document.getElementById('scanResult').classList.add('show');
+            
+            addLog(`扫描完成，发现 ${mockStocks.length} 只潜力股`);
+            
+            // 自动推送
+            if (CONFIG.PUSH_ENABLED) {
+                showPushNotification(`🔥 发现 ${mockStocks.length} 只潜力妖股！`);
+            }
+            
+            // 3秒后恢复工作状态
+            setTimeout(() => setMaomaoState('working'), 3000);
+        }
+        
+        function renderScanResults(stocks) {
+            const list = document.getElementById('stockList');
+            list.innerHTML = stocks.map(s => `
+                <div class="stock-item">
+                    <div>
+                        <div class="stock-name">${s.name} (${s.symbol})</div>
+                        <div style="font-size: 11px; opacity: 0.7;">${s.reason}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="stock-score ${s.score >= 90 ? 'high' : ''}">${s.score}分</div>
+                        <div style="font-size: 11px; color: #4CAF50;">${s.change}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ==================== 快捷操作 ====================
+        function quickAction(action) {
+            switch(action) {
+                case 'work':
+                    setMaomaoState('working');
+                    addLog('切换到工作模式');
+                    break;
+                case 'rest':
+                    setMaomaoState('resting');
+                    maomaoState.energy = Math.min(100, maomaoState.energy + 10);
+                    addLog('毛毛正在休息恢复精力');
+                    break;
+                case 'chat':
+                    showRandomBubble();
+                    addLog('和毛毛聊天');
+                    break;
+            }
+            updateUI();
+        }
+        
+        // ==================== 推送功能 ====================
+        function pushToPhone() {
+            if (!maomaoState.stocks.length) {
+                alert('请先扫描股票！');
+                return;
+            }
+            
+            // 复制到剪贴板
+            const text = maomaoState.stocks.map(s => 
+                `${s.name}(${s.symbol}): ${s.score}分 ${s.change}`
+            ).join('\n');
+            
+            navigator.clipboard.writeText('【毛毛扫描结果】\n' + text).then(() => {
+                showPushNotification('📋 已复制到剪贴板！');
+            });
+            
+            // 如果有配置推送服务，调用API
+            if (CONFIG.OPENCLAW_URL) {
+                sendPushNotification(maomaoState.stocks);
+            }
+        }
+        
+        function showPushNotification(text) {
+            const notif = document.getElementById('pushNotification');
+            notif.textContent = text;
+            notif.classList.add('show');
+            
+            setTimeout(() => {
+                notif.classList.remove('show');
+            }, 4000);
+        }
+        
+        // ==================== OpenClaw 连接 ====================
+        async function connectOpenClaw() {
+            try {
+                // 这里连接你的 OpenClaw 实例
+                // 获取毛毛的实时状态
+                addLog('正在连接 OpenClaw...');
+                
+                // 模拟连接成功
+                setTimeout(() => {
+                    addLog('已连接到毛毛的大脑 🧠');
+                }, 1000);
+            } catch (error) {
+                console.error('连接失败:', error);
+                addLog('OpenClaw 连接失败，使用本地模式');
+            }
+        }
+        
+        async function sendPushNotification(stocks) {
+            // 调用 OpenClaw 推送API
+            // 可以推送到企业微信、钉钉、Telegram等
+            try {
+                const response = await fetch(`${CONFIG.OPENCLAW_URL}/api/push`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${CONFIG.API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        type: 'stock_scan',
+                        data: stocks,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    addLog('推送已发送');
+                }
+            } catch (error) {
+                console.error('推送失败:', error);
+            }
+        }
+        
+        // ==================== UI 更新 ====================
+        function updateUI() {
+            document.getElementById('energyValue').textContent = maomaoState.energy + '%';
+            
+            const moodText = maomaoState.mood > 80 ? '开心' : 
+                           maomaoState.mood > 60 ? '不错' : 
+                           maomaoState.mood > 40 ? '一般' : '疲惫';
+            document.getElementById('moodValue').textContent = moodText;
+            
+            document.getElementById('taskValue').textContent = 
+                `${maomaoState.tasksCompleted}/${maomaoState.totalTasks}`;
+            
+            const hours = Math.floor(maomaoState.onlineTime / 60);
+            const mins = maomaoState.onlineTime % 60;
+            document.getElementById('onlineValue').textContent = 
+                hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
+        }
+        
+        function startOnlineTimer() {
+            setInterval(() => {
+                maomaoState.onlineTime++;
+                updateUI();
+            }, 60000); // 每分钟
+        }
+        
+        function addLog(message) {
+            const panel = document.getElementById('logPanel');
+            const time = new Date().toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">${time}</span>${message}`;
+            
+            panel.insertBefore(entry, panel.firstChild);
+            
+            // 限制日志数量
+            while (panel.children.length > 20) {
+                panel.removeChild(panel.lastChild);
+            }
+        }
+        
+        function showSettings() {
+            const url = prompt('请输入 OpenClaw API 地址:', CONFIG.OPENCLAW_URL);
+            if (url) {
+                localStorage.setItem('openclaw_url', url);
+                CONFIG.OPENCLAW_URL = url;
+                addLog('API地址已更新');
+            }
+            
+            const newPassword = prompt('设置新的访问密码（6位数字）:', '');
+            if (newPassword && newPassword.length === 6) {
+                CONFIG.ACCESS_CODE = newPassword;
+                addLog('密码已更新，下次登录生效');
+            }
+        }
+        
+        // ==================== 定时任务 ====================
+        // 每30分钟自动扫描（可选）
+        function setupAutoScan() {
+            setInterval(() => {
+                if (maomaoState.lastScan) {
+                    const minsSinceLastScan = (Date.now() - maomaoState.lastScan.getTime()) / 60000;
+                    if (minsSinceLastScan >= CONFIG.SCAN_INTERVAL) {
+                        showPushNotification('⏰ 该扫描妖股了！');
+                    }
+                }
+            }, 60000);
+        }
+        
+        // 初始化
+        setupAutoScan();
+        updateUI();
+    </script>
+</body>
+</html>
